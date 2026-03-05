@@ -365,4 +365,15 @@ export const de: I18nDictionary = {
     "🎤 Spracherkennung ist nicht konfiguriert.\n\nSetze STT_API_URL und STT_API_KEY in .env, um sie zu aktivieren.",
   "stt.error": "🔴 Audio konnte nicht erkannt werden: {error}",
   "stt.empty_result": "🎤 Keine Sprache in der Audionachricht erkannt.",
+
+  "cmd.description.rename": "Aktuelle Sitzung umbenennen",
+  "rename.no_active_session":
+    "⚠️ Keine aktive Sitzung zum Umbenennen.\n\nErstelle eine Sitzung mit /new oder wähle eine über /sessions.",
+  "rename.prompt": '✏️ Aktuelle Sitzung: "{title}"\n\nSende einen neuen Titel als Textnachricht.',
+  "rename.button.cancel": "❌ Abbrechen",
+  "rename.empty_title": "⚠️ Der Titel darf nicht leer sein. Bitte sende einen nicht-leeren Titel.",
+  "rename.success": "✅ Sitzung umbenannt zu: {title}",
+  "rename.error": "🔴 Sitzung konnte nicht umbenannt werden.",
+  "rename.cancelled_callback": "Abgebrochen",
+  "rename.inactive_callback": "Diese Umbenennungsaufforderung ist inaktiv",
 };

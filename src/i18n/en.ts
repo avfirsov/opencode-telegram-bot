@@ -350,6 +350,17 @@ export const en = {
     "🎤 Voice recognition is not configured.\n\nSet STT_API_URL and STT_API_KEY in .env to enable it.",
   "stt.error": "🔴 Failed to recognize audio: {error}",
   "stt.empty_result": "🎤 No speech detected in the audio message.",
+
+  "cmd.description.rename": "Rename current session",
+  "rename.no_active_session":
+    "⚠️ No active session to rename.\n\nCreate a session with /new or select one via /sessions.",
+  "rename.prompt": '✏️ Current session: "{title}"\n\nSend a new title as a text message.',
+  "rename.button.cancel": "❌ Cancel",
+  "rename.empty_title": "⚠️ Title cannot be empty. Please send a non-empty title.",
+  "rename.success": "✅ Session renamed to: {title}",
+  "rename.error": "🔴 Failed to rename session.",
+  "rename.cancelled_callback": "Cancelled",
+  "rename.inactive_callback": "This rename prompt is inactive",
 } as const;
 
 export type I18nKey = keyof typeof en;

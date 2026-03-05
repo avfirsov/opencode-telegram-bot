@@ -353,4 +353,15 @@ export const ru: I18nDictionary = {
     "🎤 Распознавание голоса не настроено.\n\nУстановите STT_API_URL и STT_API_KEY в .env для включения.",
   "stt.error": "🔴 Не удалось распознать аудио: {error}",
   "stt.empty_result": "🎤 В аудиосообщении не обнаружена речь.",
+
+  "cmd.description.rename": "Переименовать текущую сессию",
+  "rename.no_active_session":
+    "⚠️ Нет активной сессии для переименования.\n\nСоздайте сессию командой /new или выберите существующую через /sessions.",
+  "rename.prompt": '✏️ Текущая сессия: "{title}"\n\nОтправьте новое название текстовым сообщением.',
+  "rename.button.cancel": "❌ Отмена",
+  "rename.empty_title": "⚠️ Название не может быть пустым. Отправьте непустое название.",
+  "rename.success": "✅ Сессия переименована: {title}",
+  "rename.error": "🔴 Не удалось переименовать сессию.",
+  "rename.cancelled_callback": "Отменено",
+  "rename.inactive_callback": "Это меню переименования уже неактивно",
 };
