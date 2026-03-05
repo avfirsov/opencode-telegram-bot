@@ -363,4 +363,16 @@ export const es: I18nDictionary = {
     "🎤 El reconocimiento de voz no está configurado.\n\nConfigura STT_API_URL y STT_API_KEY en .env para habilitarlo.",
   "stt.error": "🔴 No se pudo reconocer el audio: {error}",
   "stt.empty_result": "🎤 No se detectó voz en el mensaje de audio.",
+
+  "cmd.description.rename": "Renombrar sesión actual",
+  "rename.no_session":
+    "⚠️ No hay sesión activa para renombrar. Usa /sessions para seleccionar una o /new para crear una.",
+  "rename.prompt": "✏️ Por favor envía el nuevo nombre de la sesión:",
+  "rename.cancel": "❌ Cancelar",
+  "rename.cancelled": "❌ Operación de renombrado cancelada.",
+  "rename.empty":
+    "⚠️ El nombre de la sesión no puede estar vacío o contener solo espacios. Por favor envía un nombre válido:",
+  "rename.success": "✅ Sesión renombrada a: {title}",
+  "rename.error": "🔴 No se pudo renombrar la sesión. Por favor intenta de nuevo.",
+  "rename.inactive_callback": "Esta operación de renombrado ya no está activa.",
 };

@@ -319,4 +319,14 @@ export const zh: I18nDictionary = {
     "🎤 语音识别尚未配置。\n\n在 .env 中设置 STT_API_URL 和 STT_API_KEY 以启用。",
   "stt.error": "🔴 识别音频失败：{error}",
   "stt.empty_result": "🎤 音频消息中未检测到语音。",
+
+  "cmd.description.rename": "重命名当前会话",
+  "rename.no_session": "⚠️ 没有活动会话可以重命名。使用 /sessions 选择一个或 /new 创建一个。",
+  "rename.prompt": "✏️ 请发送新的会话名称：",
+  "rename.cancel": "❌ 取消",
+  "rename.cancelled": "❌ 重命名操作已取消。",
+  "rename.empty": "⚠️ 会话名称不能为空或只包含空格。请发送有效名称：",
+  "rename.success": "✅ 会话已重命名为：{title}",
+  "rename.error": "🔴 重命名会话失败。请重试。",
+  "rename.inactive_callback": "此重命名操作已不再活动。",
 };

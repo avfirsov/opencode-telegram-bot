@@ -44,6 +44,18 @@ function getInteractionBlockedMessage(
     }
   }
 
+  if (interactionKind === "custom") {
+    switch (reason) {
+      case "command_not_allowed":
+        return t("interaction.blocked.command_not_allowed");
+      case "expected_callback":
+      case "expected_command":
+      case "expected_text":
+      default:
+        return t("interaction.blocked.finish_current");
+    }
+  }
+
   switch (reason) {
     case "expired":
       return t("interaction.blocked.expired");

@@ -28,11 +28,13 @@ import {
   handleCommandsCallback,
   handleCommandTextArguments,
 } from "./commands/commands.js";
+import { renameCommand } from "./commands/rename.js";
 import {
   handleQuestionCallback,
   showCurrentQuestion,
   handleQuestionTextAnswer,
 } from "./handlers/question.js";
+import { handleRenameCallback, handleRenameTextAnswer } from "./handlers/rename.js";
 import { handlePermissionCallback, showPermissionRequest } from "./handlers/permission.js";
 import { handleAgentSelect, showAgentSelectionMenu } from "./handlers/agent.js";
 import { handleModelSelect, showModelSelectionMenu } from "./handlers/model.js";
@@ -40,6 +42,7 @@ import { handleVariantSelect, showVariantSelectionMenu } from "./handlers/varian
 import { handleContextButtonPress, handleCompactConfirm } from "./handlers/context.js";
 import { handleInlineMenuCancel } from "./handlers/inline-menu.js";
 import { questionManager } from "../question/manager.js";
+import { renameManager } from "../rename/manager.js";
 import { interactionManager } from "../interaction/manager.js";
 import { clearAllInteractionState } from "../interaction/cleanup.js";
 import { keyboardManager } from "../keyboard/manager.js";
@@ -561,6 +564,7 @@ export function createBot(): Bot<Context> {
   bot.command("projects", projectsCommand);
   bot.command("sessions", sessionsCommand);
   bot.command("new", newCommand);
+  bot.command("rename", renameCommand);
   bot.command("stop", stopCommand);
   bot.command("commands", commandsCommand);
 
@@ -580,6 +584,7 @@ export function createBot(): Bot<Context> {
       const handledSession = await handleSessionSelect(ctx);
       const handledProject = await handleProjectSelect(ctx);
       const handledQuestion = await handleQuestionCallback(ctx);
+      const handledRename = await handleRenameCallback(ctx);
       const handledPermission = await handlePermissionCallback(ctx);
       const handledAgent = await handleAgentSelect(ctx);
       const handledModel = await handleModelSelect(ctx);
@@ -588,7 +593,7 @@ export function createBot(): Bot<Context> {
       const handledCommands = await handleCommandsCallback(ctx, { bot, ensureEventSubscription });
 
       logger.debug(
-        `[Bot] Callback handled: inlineCancel=${handledInlineCancel}, session=${handledSession}, project=${handledProject}, question=${handledQuestion}, permission=${handledPermission}, agent=${handledAgent}, model=${handledModel}, variant=${handledVariant}, compactConfirm=${handledCompactConfirm}, commands=${handledCommands}`,
+        `[Bot] Callback handled: inlineCancel=${handledInlineCancel}, session=${handledSession}, project=${handledProject}, question=${handledQuestion}, rename=${handledRename}, permission=${handledPermission}, agent=${handledAgent}, model=${handledModel}, variant=${handledVariant}, compactConfirm=${handledCompactConfirm}, commands=${handledCommands}`,
       );
 
       if (
@@ -596,6 +601,7 @@ export function createBot(): Bot<Context> {
         !handledSession &&
         !handledProject &&
         !handledQuestion &&
+        !handledRename &&
         !handledPermission &&
         !handledAgent &&
         !handledModel &&
@@ -814,6 +820,11 @@ export function createBot(): Bot<Context> {
     chatIdInstance = ctx.chat.id;
 
     if (text.startsWith("/")) {
+      return;
+    }
+
+    if (renameManager.isWaiting()) {
+      await handleRenameTextAnswer(ctx);
       return;
     }
 
