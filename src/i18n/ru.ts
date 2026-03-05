@@ -7,6 +7,7 @@ export const ru: I18nDictionary = {
   "cmd.description.sessions": "Список сессий",
   "cmd.description.projects": "Список проектов",
   "cmd.description.commands": "Пользовательские команды",
+  "cmd.description.rename": "Переименовать текущую сессию",
   "cmd.description.opencode_start": "Запустить OpenCode сервер",
   "cmd.description.opencode_stop": "Остановить OpenCode сервер",
   "cmd.description.help": "Справка",
@@ -137,6 +138,16 @@ export const ru: I18nDictionary = {
   "new.project_not_selected": "🏗 Проект не выбран.\n\nСначала выберите проект командой /projects.",
   "new.created": "✅ Создана новая сессия: {title}",
   "new.create_error": "🔴 OpenCode Server недоступен или произошла ошибка при создании сессии.",
+
+  "rename.no_session":
+    "📋 Нет активной сессии.\n\nВыберите сессию через /sessions или создайте новую командой /new.",
+  "rename.prompt": "Введите новое название для сессии:\n\nТекущее: {currentTitle}",
+  "rename.empty": "⚠️ Название не может быть пустым. Введите корректное название.",
+  "rename.inactive_callback": "Это меню неактивно",
+  "rename.cancelled_callback": "Отменено",
+  "rename.cancelled": "❌ Переименование отменено",
+  "rename.success": "✅ Сессия переименована в: {newTitle}",
+  "rename.error": "🔴 Не удалось переименовать сессию.",
 
   "stop.no_active_session":
     "🛑 Агент не был запущен\n\nСначала создайте сессию командой /new или выберите существующую через /sessions.",

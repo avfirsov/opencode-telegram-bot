@@ -5,6 +5,7 @@ export const en = {
   "cmd.description.sessions": "List sessions",
   "cmd.description.projects": "List projects",
   "cmd.description.commands": "Custom commands",
+  "cmd.description.rename": "Rename current session",
   "cmd.description.opencode_start": "Start OpenCode server",
   "cmd.description.opencode_stop": "Stop OpenCode server",
   "cmd.description.help": "Help",
@@ -138,6 +139,16 @@ export const en = {
   "new.created": "✅ New session created: {title}",
   "new.create_error":
     "🔴 OpenCode Server is unavailable or an error occurred while creating session.",
+
+  "rename.no_session":
+    "📋 No active session.\n\nSelect a session via /sessions or create a new one with /new.",
+  "rename.prompt": "Enter new name for session:\n\nCurrent: {currentTitle}",
+  "rename.empty": "⚠️ Name cannot be empty. Please enter a valid name.",
+  "rename.inactive_callback": "This menu is inactive",
+  "rename.cancelled_callback": "Cancelled",
+  "rename.cancelled": "❌ Renaming cancelled",
+  "rename.success": "✅ Session renamed to: {newTitle}",
+  "rename.error": "🔴 Failed to rename session.",
 
   "stop.no_active_session":
     "🛑 Agent was not started\n\nCreate a session with /new or select one via /sessions.",

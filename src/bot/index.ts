@@ -28,6 +28,7 @@ import {
   handleCommandsCallback,
   handleCommandTextArguments,
 } from "./commands/commands.js";
+import { renameCommand, handleRenameCallback, handleRenameTextInput } from "./commands/rename.js";
 import {
   handleQuestionCallback,
   showCurrentQuestion,
@@ -563,6 +564,7 @@ export function createBot(): Bot<Context> {
   bot.command("new", newCommand);
   bot.command("stop", stopCommand);
   bot.command("commands", commandsCommand);
+  bot.command("rename", renameCommand);
 
   bot.on("message:text", unknownCommandMiddleware);
 
@@ -586,9 +588,10 @@ export function createBot(): Bot<Context> {
       const handledVariant = await handleVariantSelect(ctx);
       const handledCompactConfirm = await handleCompactConfirm(ctx);
       const handledCommands = await handleCommandsCallback(ctx, { bot, ensureEventSubscription });
+      const handledRename = await handleRenameCallback(ctx);
 
       logger.debug(
-        `[Bot] Callback handled: inlineCancel=${handledInlineCancel}, session=${handledSession}, project=${handledProject}, question=${handledQuestion}, permission=${handledPermission}, agent=${handledAgent}, model=${handledModel}, variant=${handledVariant}, compactConfirm=${handledCompactConfirm}, commands=${handledCommands}`,
+        `[Bot] Callback handled: inlineCancel=${handledInlineCancel}, session=${handledSession}, project=${handledProject}, question=${handledQuestion}, permission=${handledPermission}, agent=${handledAgent}, model=${handledModel}, variant=${handledVariant}, compactConfirm=${handledCompactConfirm}, commands=${handledCommands}, rename=${handledRename}`,
       );
 
       if (
@@ -601,7 +604,8 @@ export function createBot(): Bot<Context> {
         !handledModel &&
         !handledVariant &&
         !handledCompactConfirm &&
-        !handledCommands
+        !handledCommands &&
+        !handledRename
       ) {
         logger.debug("Unknown callback query:", ctx.callbackQuery?.data);
         await ctx.answerCallbackQuery({ text: t("callback.unknown_command") });
@@ -825,6 +829,11 @@ export function createBot(): Bot<Context> {
     const promptDeps = { bot, ensureEventSubscription };
     const handledCommandArgs = await handleCommandTextArguments(ctx, promptDeps);
     if (handledCommandArgs) {
+      return;
+    }
+
+    const handledRename = await handleRenameTextInput(ctx);
+    if (handledRename) {
       return;
     }
 
