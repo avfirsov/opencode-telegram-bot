@@ -1,6 +1,7 @@
 export const en = {
   "cmd.description.status": "Server and session status",
   "cmd.description.new": "Create a new session",
+  "cmd.description.rename": "Rename current session",
   "cmd.description.stop": "Stop current action",
   "cmd.description.sessions": "List sessions",
   "cmd.description.projects": "List projects",
@@ -138,6 +139,15 @@ export const en = {
   "new.created": "✅ New session created: {title}",
   "new.create_error":
     "🔴 OpenCode Server is unavailable or an error occurred while creating session.",
+
+  "rename.no_active_session":
+    "⚠️ No active session. Select one with /sessions or create one with /new.",
+  "rename.prompt": "✏️ Send the new session title as your next text message.",
+  "rename.inactive_callback": "This rename request is inactive",
+  "rename.cancelled_callback": "Cancelled",
+  "rename.empty_title": "⚠️ Session title cannot be empty. Please send non-empty text.",
+  "rename.success": "✅ Session renamed: {title}",
+  "rename.error": "🔴 Failed to rename session. Please try again or tap Cancel.",
 
   "stop.no_active_session":
     "🛑 Agent was not started\n\nCreate a session with /new or select one via /sessions.",

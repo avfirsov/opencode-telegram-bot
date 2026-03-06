@@ -3,6 +3,7 @@ import type { I18nDictionary } from "./en.js";
 export const zh: I18nDictionary = {
   "cmd.description.status": "服务器和会话状态",
   "cmd.description.new": "创建新会话",
+  "cmd.description.rename": "重命名当前会话",
   "cmd.description.stop": "停止当前操作",
   "cmd.description.sessions": "列出会话",
   "cmd.description.projects": "列出项目",
@@ -123,6 +124,14 @@ export const zh: I18nDictionary = {
   "new.project_not_selected": "🏗 未选择项目。\n\n请先使用 /projects 选择一个项目。",
   "new.created": "✅ 新会话已创建：{title}",
   "new.create_error": "🔴 OpenCode 服务器不可用，或创建会话时发生错误。",
+
+  "rename.no_active_session": "⚠️ 当前没有活动会话。请用 /sessions 选择会话，或用 /new 创建会话。",
+  "rename.prompt": "✏️ 请在下一条文本消息中发送新的会话名称。",
+  "rename.inactive_callback": "此重命名请求已失效",
+  "rename.cancelled_callback": "已取消",
+  "rename.empty_title": "⚠️ 会话名称不能为空。请发送非空文本。",
+  "rename.success": "✅ 会话已重命名：{title}",
+  "rename.error": "🔴 重命名会话失败。请重试或点击取消。",
 
   "stop.no_active_session": "🛑 代理尚未启动\n\n使用 /new 创建会话，或通过 /sessions 选择一个。",
   "stop.in_progress": "🛑 已停止事件流，正在发送中止信号...\n\n等待代理停止。",

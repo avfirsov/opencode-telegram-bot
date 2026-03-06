@@ -3,6 +3,7 @@ import type { I18nDictionary } from "./en.js";
 export const ru: I18nDictionary = {
   "cmd.description.status": "Статус сервера и сессии",
   "cmd.description.new": "Создать новую сессию",
+  "cmd.description.rename": "Переименовать текущую сессию",
   "cmd.description.stop": "Прервать текущее действие",
   "cmd.description.sessions": "Список сессий",
   "cmd.description.projects": "Список проектов",
@@ -137,6 +138,15 @@ export const ru: I18nDictionary = {
   "new.project_not_selected": "🏗 Проект не выбран.\n\nСначала выберите проект командой /projects.",
   "new.created": "✅ Создана новая сессия: {title}",
   "new.create_error": "🔴 OpenCode Server недоступен или произошла ошибка при создании сессии.",
+
+  "rename.no_active_session":
+    "⚠️ Нет активной сессии. Выберите сессию через /sessions или создайте новую через /new.",
+  "rename.prompt": "✏️ Отправьте новое название сессии следующим текстовым сообщением.",
+  "rename.inactive_callback": "Этот запрос переименования уже неактивен",
+  "rename.cancelled_callback": "Отменено",
+  "rename.empty_title": "⚠️ Название сессии не может быть пустым. Отправьте непустой текст.",
+  "rename.success": "✅ Сессия переименована: {title}",
+  "rename.error": "🔴 Не удалось переименовать сессию. Попробуйте снова или нажмите Отмена.",
 
   "stop.no_active_session":
     "🛑 Агент не был запущен\n\nСначала создайте сессию командой /new или выберите существующую через /sessions.",
