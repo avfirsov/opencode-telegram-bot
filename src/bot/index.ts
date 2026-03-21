@@ -65,6 +65,7 @@ import { processUserPrompt } from "./handlers/prompt.js";
 import { handleVoiceMessage } from "./handlers/voice.js";
 import { handleDocumentMessage } from "./handlers/document.js";
 import { downloadTelegramFile, toDataUri } from "./utils/file-download.js";
+import { finalizeAssistantResponse } from "./utils/finalize-assistant-response.js";
 import { deliverThinkingMessage } from "./utils/thinking-message.js";
 import { sendBotText } from "./utils/telegram-text.js";
 import { getModelCapabilities, supportsInput } from "../model/capabilities.js";
@@ -327,52 +328,40 @@ async function ensureEventSubscription(directory: string): Promise<void> {
       return;
     }
 
-    let streamedViaMessages = false;
-    if (config.bot.responseStreaming) {
-      const preparedStreamPayload = prepareStreamingPayload(messageText);
-      if (preparedStreamPayload) {
-        preparedStreamPayload.sendOptions = undefined;
-        preparedStreamPayload.editOptions = undefined;
-      }
-
-      streamedViaMessages = await responseStreamer.complete(
-        sessionId,
-        messageId,
-        preparedStreamPayload ?? undefined,
-      );
-    }
-
-    await toolMessageBatcher.flushSession(sessionId, "assistant_message_completed");
-
-    if (streamedViaMessages) {
-      logger.debug(
-        `[Bot] Final assistant message already streamed (session=${sessionId}, message=${messageId})`,
-      );
-      foregroundSessionState.markIdle(sessionId);
-      await scheduledTaskRuntime.flushDeferredDeliveries();
-      return;
-    }
+    const botApi = botInstance.api;
+    const chatId = chatIdInstance;
 
     try {
-      const parts = formatSummary(messageText);
-      const assistantParseMode = getAssistantParseMode();
-      const assistantMessageFormat = assistantParseMode === "MarkdownV2" ? "markdown_v2" : "raw";
+      const streamedViaMessages = await finalizeAssistantResponse({
+        responseStreaming: config.bot.responseStreaming,
+        sessionId,
+        messageId,
+        messageText,
+        responseStreamer,
+        flushPendingServiceMessages: () =>
+          toolMessageBatcher.flushSession(sessionId, "assistant_message_completed"),
+        prepareStreamingPayload,
+        formatSummary,
+        resolveFormat: () => (getAssistantParseMode() === "MarkdownV2" ? "markdown_v2" : "raw"),
+        getReplyKeyboard: getCurrentReplyKeyboard,
+        sendText: async (text, options, format) => {
+          await sendBotText({
+            api: botApi,
+            chatId,
+            text,
+            options: options as Parameters<typeof sendBotText>[0]["options"],
+            format,
+          });
+        },
+      });
 
-      logger.debug(
-        `[Bot] Sending completed message to Telegram (chatId=${chatIdInstance}, parts=${parts.length})`,
-      );
-
-      for (let i = 0; i < parts.length; i++) {
-        const keyboard = getCurrentReplyKeyboard();
-        const options = keyboard ? { reply_markup: keyboard } : undefined;
-
-        await sendBotText({
-          api: botInstance.api,
-          chatId: chatIdInstance,
-          text: parts[i],
-          options,
-          format: assistantMessageFormat,
-        });
+      if (streamedViaMessages) {
+        logger.debug(
+          `[Bot] Final assistant message already streamed (session=${sessionId}, message=${messageId})`,
+        );
+        foregroundSessionState.markIdle(sessionId);
+        await scheduledTaskRuntime.flushDeferredDeliveries();
+        return;
       }
     } catch (err) {
       logger.error("Failed to send message to Telegram:", err);
