@@ -27,7 +27,7 @@ function formatToolStep(subagent: SubagentInfo): string {
     hasFileAttachment: false,
   };
 
-  const formatted = formatCompactToolInfo(toolInfo, 64, "").trim();
+  const formatted = formatCompactToolInfo(toolInfo, 128, "").trim();
   const firstSpaceIndex = formatted.indexOf(" ");
   if (firstSpaceIndex >= 0 && formatted.slice(firstSpaceIndex + 1) === subagent.currentTool) {
     return "";
