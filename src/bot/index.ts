@@ -51,7 +51,6 @@ import { keyboardManager } from "../keyboard/manager.js";
 import { subscribeToEvents } from "../opencode/events.js";
 import { summaryAggregator } from "../summary/aggregator.js";
 import {
-  formatSummary,
   formatSummaryWithMode,
   formatToolInfo,
   getAssistantParseMode,
@@ -72,7 +71,7 @@ import { downloadTelegramFile, toDataUri } from "./utils/file-download.js";
 import { finalizeAssistantResponse } from "./utils/finalize-assistant-response.js";
 import { sendTtsResponseForSession } from "./utils/send-tts-response.js";
 import { deliverThinkingMessage } from "./utils/thinking-message.js";
-import { sendBotText } from "./utils/telegram-text.js";
+import { sendBotText, sendRenderedBotPart } from "./utils/telegram-text.js";
 import { formatAssistantRunFooter } from "./utils/assistant-run-footer.js";
 import { getModelCapabilities, supportsInput } from "../model/capabilities.js";
 import { getStoredModel } from "../model/manager.js";
@@ -87,6 +86,7 @@ import {
   editMessageWithMarkdownFallback,
   sendMessageWithMarkdownFallback,
 } from "./utils/send-with-markdown-fallback.js";
+import { renderTelegramParts } from "../telegram/render/pipeline.js";
 
 let botInstance: Bot<Context> | null = null;
 let chatIdInstance: number | null = null;
@@ -464,18 +464,14 @@ async function ensureEventSubscription(directory: string): Promise<void> {
               toolCallStreamer.breakSession(sessionId, "assistant_message_completed"),
             ]).then(() => undefined),
           prepareStreamingPayload: prepareFinalStreamingPayload,
-          formatSummary,
-          formatRawSummary: (text) => formatSummaryWithMode(text, "raw"),
-          resolveFormat: () => (getAssistantParseMode() === "MarkdownV2" ? "markdown_v2" : "raw"),
+          renderFinalParts: (text) => renderTelegramParts(text),
           getReplyKeyboard: getCurrentReplyKeyboard,
-          sendText: async (text, rawFallbackText, options, format) => {
-            await sendBotText({
+          sendRenderedPart: async (part, options) => {
+            await sendRenderedBotPart({
               api: botApi,
               chatId,
-              text,
-              rawFallbackText,
+              part,
               options: options as Parameters<typeof sendBotText>[0]["options"],
-              format,
             });
           },
         });
