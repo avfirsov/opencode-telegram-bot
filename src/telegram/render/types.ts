@@ -1,6 +1,17 @@
 import type { MessageEntity } from "grammy/types";
 
+export type BlockRenderMode = "full" | "simplified" | "line-by-line" | "plain";
+
 export interface TelegramRenderedPart {
+  text: string;
+  entities?: MessageEntity[];
+  fallbackText: string;
+  source: "entities" | "plain";
+}
+
+export interface TelegramRenderedBlock {
+  blockType: TelegramBlock["type"];
+  mode: BlockRenderMode;
   text: string;
   entities?: MessageEntity[];
   fallbackText: string;

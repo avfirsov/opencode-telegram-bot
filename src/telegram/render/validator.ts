@@ -18,6 +18,7 @@ const SUPPORTED_ENTITY_TYPES = new Set<MessageEntity["type"]>([
   "strikethrough",
   "spoiler",
   "code",
+  "pre",
   "text_link",
 ]);
 
@@ -153,11 +154,16 @@ function validateEntityPair(
     return issues;
   }
 
-  if (left.type === "code" || right.type === "code") {
+  if (
+    left.type === "code" ||
+    right.type === "code" ||
+    left.type === "pre" ||
+    right.type === "pre"
+  ) {
     issues.push({
-      code: "code_overlap",
-      message: `Code entities cannot overlap with ${left.type === "code" ? right.type : left.type}`,
-      entityIndex: left.type === "code" ? rightIndex : leftIndex,
+      code: left.type === "pre" || right.type === "pre" ? "pre_overlap" : "code_overlap",
+      message: `${left.type === "pre" || right.type === "pre" ? "Pre" : "Code"} entities cannot overlap with ${left.type === "code" || left.type === "pre" ? right.type : left.type}`,
+      entityIndex: left.type === "code" || left.type === "pre" ? rightIndex : leftIndex,
     });
     return issues;
   }
