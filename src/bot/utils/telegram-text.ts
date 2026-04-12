@@ -117,6 +117,13 @@ export async function sendRenderedBotPart({
 }: SendRenderedBotPartParams): Promise<RenderedPartSendResult> {
   const rawOptions = stripRichFormattingOptions(options);
 
+  logger.debug("[Bot] Sending rendered Telegram part", {
+    source: part.source,
+    textLength: part.text.length,
+    fallbackTextLength: part.fallbackText.length,
+    entityCount: part.entities?.length ?? 0,
+  });
+
   if (!part.entities?.length) {
     const sentMessage = await api.sendMessage(chatId, part.text, rawOptions);
     return {
@@ -145,6 +152,9 @@ export async function sendRenderedBotPart({
       error,
     );
     const sentMessage = await api.sendMessage(chatId, part.fallbackText, rawOptions);
+    logger.debug("[Bot] Assistant message part sent in raw fallback mode", {
+      fallbackTextLength: part.fallbackText.length,
+    });
     return {
       messageId: sentMessage.message_id,
       deliveredSignature: getTelegramRenderedPartSignature({ text: part.fallbackText }),
@@ -160,6 +170,14 @@ export async function editRenderedBotPart({
   options,
 }: EditRenderedBotPartParams): Promise<RenderedPartDeliveryResult> {
   const rawOptions = stripRichFormattingOptions(options);
+
+  logger.debug("[Bot] Editing rendered Telegram part", {
+    messageId,
+    source: part.source,
+    textLength: part.text.length,
+    fallbackTextLength: part.fallbackText.length,
+    entityCount: part.entities?.length ?? 0,
+  });
 
   if (!part.entities?.length) {
     await api.editMessageText(chatId, messageId, part.text, rawOptions);
@@ -184,6 +202,10 @@ export async function editRenderedBotPart({
 
     logger.warn("[Bot] Entity payload rejected, retrying assistant edit part in raw mode", error);
     await api.editMessageText(chatId, messageId, part.fallbackText, rawOptions);
+    logger.debug("[Bot] Assistant edit part applied in raw fallback mode", {
+      messageId,
+      fallbackTextLength: part.fallbackText.length,
+    });
     return {
       deliveredSignature: getTelegramRenderedPartSignature({ text: part.fallbackText }),
     };

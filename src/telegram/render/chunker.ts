@@ -1,5 +1,6 @@
 import type { MessageEntity } from "grammy/types";
 import type { TelegramRenderedBlock, TelegramRenderedPart } from "./types.js";
+import { logger } from "../../utils/logger.js";
 import { validateTelegramEntities } from "./validator.js";
 
 const DEFAULT_MAX_PART_LENGTH = 4096;
@@ -233,6 +234,13 @@ function splitPreformattedBlock(
     start = end;
   }
 
+  logger.debug("[TelegramRender] Preformatted block chunked", {
+    blockType: block.blockType,
+    textLength: block.text.length,
+    maxLength,
+    partCount: parts.length,
+  });
+
   return parts;
 }
 
@@ -257,6 +265,16 @@ function splitRichBlock(
     const text = block.text.slice(start, end);
     parts.push(createRenderedPart(text, text, entities));
     start = end;
+  }
+
+  if (parts.length > 1) {
+    logger.debug("[TelegramRender] Rich block chunked", {
+      blockType: block.blockType,
+      textLength: block.text.length,
+      entityCount: block.entities.length,
+      maxLength,
+      partCount: parts.length,
+    });
   }
 
   return parts;
@@ -288,6 +306,13 @@ function splitBlockToParts(
     if (richParts) {
       return richParts;
     }
+
+    logger.debug("[TelegramRender] Rich block downgraded to plain during chunking", {
+      blockType: block.blockType,
+      textLength: block.text.length,
+      entityCount: block.entities.length,
+      maxLength,
+    });
   }
 
   return splitPlainText(block.fallbackText, maxLength).map((text) =>

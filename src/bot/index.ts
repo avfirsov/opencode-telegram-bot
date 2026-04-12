@@ -83,9 +83,11 @@ import { assistantRunState } from "./assistant-run-state.js";
 import { ResponseStreamer } from "./streaming/response-streamer.js";
 import type { StreamingMessagePayload } from "./streaming/response-streamer.js";
 import { ToolCallStreamer, type ToolStreamKey } from "./streaming/tool-call-streamer.js";
-import { chunkTelegramRenderedBlocks } from "../telegram/render/chunker.js";
-import { renderTelegramBlocks, renderTelegramParts } from "../telegram/render/pipeline.js";
-import type { TelegramRenderedBlock, TelegramRenderedPart } from "../telegram/render/types.js";
+import {
+  prepareAssistantFinalStreamingPayload,
+  prepareAssistantStreamingPayload,
+  renderAssistantFinalPartsSafe,
+} from "./utils/assistant-rendering.js";
 
 let botInstance: Bot<Context> | null = null;
 let chatIdInstance: number | null = null;
@@ -122,94 +124,12 @@ function prepareDocumentCaption(caption: string): string {
   return `${normalizedCaption.slice(0, TELEGRAM_DOCUMENT_CAPTION_MAX_LENGTH - 3)}...`;
 }
 
-function createPlainRenderedBlock(text: string): TelegramRenderedBlock {
-  return {
-    blockType: "plain",
-    mode: "plain",
-    text,
-    fallbackText: text,
-    source: "plain",
-  };
-}
-
-function createPlainRenderedParts(text: string, maxPartLength: number): TelegramRenderedPart[] {
-  return chunkTelegramRenderedBlocks([createPlainRenderedBlock(text)], { maxPartLength });
-}
-
-function renderAssistantBlocksSafe(text: string): TelegramRenderedBlock[] {
-  if (!text) {
-    return [];
-  }
-
-  try {
-    return renderTelegramBlocks(text);
-  } catch (error) {
-    logger.warn(
-      "[Bot] Assistant block rendering failed, falling back to plain streaming block",
-      error,
-    );
-    return [createPlainRenderedBlock(text)];
-  }
-}
-
-function renderAssistantPartsSafe(text: string, maxPartLength = 4096): TelegramRenderedPart[] {
-  if (!text) {
-    return [];
-  }
-
-  try {
-    return renderTelegramParts(text, { maxPartLength });
-  } catch (error) {
-    logger.warn("[Bot] Assistant part rendering failed, falling back to plain text parts", error);
-    return createPlainRenderedParts(text, maxPartLength);
-  }
-}
-
-function getStableStreamingBoundary(messageText: string): number {
-  if (!messageText) {
-    return 0;
-  }
-
-  if (messageText.endsWith("\n\n")) {
-    return messageText.length;
-  }
-
-  const lastBlockSeparatorIndex = messageText.lastIndexOf("\n\n");
-  return lastBlockSeparatorIndex >= 0 ? lastBlockSeparatorIndex + 2 : 0;
-}
-
 function prepareStreamingPayload(messageText: string): StreamingMessagePayload | null {
-  const stableBoundary = getStableStreamingBoundary(messageText);
-  const blocks: TelegramRenderedBlock[] = [];
-
-  if (stableBoundary > 0) {
-    blocks.push(...renderAssistantBlocksSafe(messageText.slice(0, stableBoundary)));
-  }
-
-  const unstableTail = stableBoundary > 0 ? messageText.slice(stableBoundary) : messageText;
-  if (unstableTail) {
-    blocks.push(createPlainRenderedBlock(unstableTail));
-  }
-
-  const parts = chunkTelegramRenderedBlocks(blocks, { maxPartLength: RESPONSE_STREAM_TEXT_LIMIT });
-  if (parts.length === 0) {
-    return null;
-  }
-
-  return {
-    parts,
-  };
+  return prepareAssistantStreamingPayload(messageText, RESPONSE_STREAM_TEXT_LIMIT);
 }
 
 function prepareFinalStreamingPayload(messageText: string): StreamingMessagePayload | null {
-  const parts = renderAssistantPartsSafe(messageText, RESPONSE_STREAM_TEXT_LIMIT);
-  if (parts.length === 0) {
-    return null;
-  }
-
-  return {
-    parts,
-  };
+  return prepareAssistantFinalStreamingPayload(messageText, RESPONSE_STREAM_TEXT_LIMIT);
 }
 
 function enqueueSessionCompletionTask(sessionId: string, task: () => Promise<void>): Promise<void> {
@@ -519,7 +439,7 @@ async function ensureEventSubscription(directory: string): Promise<void> {
               toolCallStreamer.breakSession(sessionId, "assistant_message_completed"),
             ]).then(() => undefined),
           prepareStreamingPayload: prepareFinalStreamingPayload,
-          renderFinalParts: (text) => renderAssistantPartsSafe(text),
+          renderFinalParts: (text) => renderAssistantFinalPartsSafe(text),
           getReplyKeyboard: getCurrentReplyKeyboard,
           sendRenderedPart: async (part, options) => {
             await sendRenderedBotPart({

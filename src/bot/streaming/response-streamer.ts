@@ -68,6 +68,7 @@ function clonePart(part: TelegramRenderedPart): TelegramRenderedPart {
 function normalizePayload(payload: StreamingMessagePayload): StreamingMessagePayload | null {
   const normalizedParts = payload.parts.map(clonePart).filter((part) => part.text.length > 0);
   if (normalizedParts.length === 0) {
+    logger.debug("[ResponseStreamer] Dropped empty streaming payload after normalization");
     return null;
   }
 
@@ -154,6 +155,9 @@ export class ResponseStreamer {
 
     const state = this.states.get(buildStateKey(sessionId, messageId));
     if (!state) {
+      logger.debug(
+        `[ResponseStreamer] Complete skipped, no active stream state: session=${sessionId}, message=${messageId}`,
+      );
       return notStreamed;
     }
 
@@ -176,6 +180,9 @@ export class ResponseStreamer {
     }
 
     if (state.telegramMessageIds.length === 0) {
+      logger.debug(
+        `[ResponseStreamer] Complete returned not streamed: session=${sessionId}, message=${messageId}, reason=no_visible_partials`,
+      );
       this.cancelState(state);
       this.states.delete(state.key);
       return notStreamed;
@@ -332,6 +339,9 @@ export class ResponseStreamer {
         targetSignatures.every((signature, index) => signature === state.lastSentSignatures[index]);
 
       if (unchanged) {
+        logger.debug(
+          `[ResponseStreamer] Skipped unchanged payload: session=${state.sessionId}, message=${state.messageId}, parts=${payload.parts.length}`,
+        );
         return state.telegramMessageIds.length > 0;
       }
 

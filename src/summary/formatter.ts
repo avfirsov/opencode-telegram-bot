@@ -123,14 +123,6 @@ export function formatSummary(text: string): string[] {
   return formatSummaryWithMode(text, config.bot.messageFormatMode);
 }
 
-export function getAssistantParseMode(): "MarkdownV2" | undefined {
-  if (config.bot.messageFormatMode === "markdown") {
-    return "MarkdownV2";
-  }
-
-  return undefined;
-}
-
 export function escapePlainTextForTelegramMarkdownV2(text: string): string {
   return text.replace(MARKDOWN_V2_RESERVED_CHARS, "\\$1");
 }
