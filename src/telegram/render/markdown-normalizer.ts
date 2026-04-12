@@ -1,3 +1,7 @@
+interface NormalizeMarkdownOptions {
+  preserveBlockMarkup: boolean;
+}
+
 function isCodeFenceLine(line: string): boolean {
   return line.trimStart().startsWith("```");
 }
@@ -34,7 +38,7 @@ function normalizeChecklistLine(line: string): string | null {
   return `${match[1]}${marker} ${match[3]}`;
 }
 
-export function normalizeMarkdownForTelegramRendering(text: string): string {
+function normalizeMarkdown(text: string, options: NormalizeMarkdownOptions): string {
   const lines = text.split("\n");
   const output: string[] = [];
   let inCodeFence = false;
@@ -62,13 +66,13 @@ export function normalizeMarkdownForTelegramRendering(text: string): string {
     }
 
     if (isHeadingLine(line)) {
-      output.push(normalizeHeadingLine(line));
+      output.push(options.preserveBlockMarkup ? line : normalizeHeadingLine(line));
       inQuote = false;
       continue;
     }
 
     if (isHorizontalRuleLine(line)) {
-      output.push("──────────");
+      output.push(options.preserveBlockMarkup ? line : "──────────");
       inQuote = false;
       continue;
     }
@@ -79,14 +83,20 @@ export function normalizeMarkdownForTelegramRendering(text: string): string {
       const quoteContent = trimmedLeft.replace(/^>\s?/, "");
       const normalizedChecklistInQuote = normalizeChecklistLine(quoteContent);
       output.push(
-        normalizedChecklistInQuote ? `> ${normalizedChecklistInQuote.trimStart()}` : trimmedLeft,
+        normalizedChecklistInQuote && !options.preserveBlockMarkup
+          ? `> ${normalizedChecklistInQuote.trimStart()}`
+          : `> ${quoteContent.trimStart()}`,
       );
       continue;
     }
 
     const normalizedChecklist = normalizeChecklistLine(line);
     if (normalizedChecklist) {
-      output.push(inQuote ? `> ${normalizedChecklist.trimStart()}` : normalizedChecklist);
+      if (options.preserveBlockMarkup) {
+        output.push(inQuote ? `> ${trimmedLeft}` : line);
+      } else {
+        output.push(inQuote ? `> ${normalizedChecklist.trimStart()}` : normalizedChecklist);
+      }
       continue;
     }
 
@@ -99,4 +109,12 @@ export function normalizeMarkdownForTelegramRendering(text: string): string {
   }
 
   return output.join("\n");
+}
+
+export function normalizeMarkdownForTelegramRendering(text: string): string {
+  return normalizeMarkdown(text, { preserveBlockMarkup: false });
+}
+
+export function normalizeMarkdownForTelegramBlockParsing(text: string): string {
+  return normalizeMarkdown(text, { preserveBlockMarkup: true });
 }

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { normalizeMarkdownForTelegramRendering } from "../../../src/telegram/render/markdown-normalizer.js";
+import {
+  normalizeMarkdownForTelegramBlockParsing,
+  normalizeMarkdownForTelegramRendering,
+} from "../../../src/telegram/render/markdown-normalizer.js";
 
 describe("telegram/render/markdown-normalizer", () => {
   it("normalizes headings, quotes, horizontal rules, and checklists", () => {
@@ -65,5 +68,31 @@ describe("telegram/render/markdown-normalizer", () => {
     const input = "*text: *value**";
 
     expect(normalizeMarkdownForTelegramRendering(input)).toBe(input);
+  });
+
+  it("keeps structural markdown for parser-safe normalization", () => {
+    const input = [
+      "# Main heading",
+      "",
+      "> - [ ] Review",
+      "Follow-up line",
+      "",
+      "- [x] Done task",
+      "",
+      "---",
+    ].join("\n");
+
+    expect(normalizeMarkdownForTelegramBlockParsing(input)).toBe(
+      [
+        "# Main heading",
+        "",
+        "> - [ ] Review",
+        "> Follow-up line",
+        "",
+        "- [x] Done task",
+        "",
+        "---",
+      ].join("\n"),
+    );
   });
 });
