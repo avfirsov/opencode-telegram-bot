@@ -41,6 +41,22 @@ interface SendRenderedBotPartParams {
   options?: TelegramSendMessageOptions;
 }
 
+interface EditRenderedBotPartParams {
+  api: EditMessageApi;
+  chatId: Parameters<EditMessageApi["editMessageText"]>[0];
+  messageId: Parameters<EditMessageApi["editMessageText"]>[1];
+  part: TelegramRenderedPart;
+  options?: TelegramEditMessageOptions;
+}
+
+interface RenderedPartDeliveryResult {
+  deliveredSignature: string;
+}
+
+interface RenderedPartSendResult extends RenderedPartDeliveryResult {
+  messageId: number;
+}
+
 function resolveParseMode(format: TelegramTextFormat | undefined): "MarkdownV2" | undefined {
   if (format === "markdown_v2") {
     return "MarkdownV2";
@@ -69,6 +85,12 @@ function stripRichFormattingOptions<T extends TelegramSendMessageOptions | undef
   return rawOptions as T;
 }
 
+export function getTelegramRenderedPartSignature(
+  part: Pick<TelegramRenderedPart, "text" | "entities">,
+): string {
+  return `${part.text}\n${JSON.stringify(part.entities ?? null)}`;
+}
+
 export async function sendBotText({
   api,
   chatId,
@@ -92,19 +114,27 @@ export async function sendRenderedBotPart({
   chatId,
   part,
   options,
-}: SendRenderedBotPartParams): Promise<void> {
+}: SendRenderedBotPartParams): Promise<RenderedPartSendResult> {
   const rawOptions = stripRichFormattingOptions(options);
 
   if (!part.entities?.length) {
-    await api.sendMessage(chatId, part.text, rawOptions);
-    return;
+    const sentMessage = await api.sendMessage(chatId, part.text, rawOptions);
+    return {
+      messageId: sentMessage.message_id,
+      deliveredSignature: getTelegramRenderedPartSignature({ text: part.text }),
+    };
   }
 
   try {
-    await api.sendMessage(chatId, part.text, {
+    const sentMessage = await api.sendMessage(chatId, part.text, {
       ...(rawOptions || {}),
       entities: part.entities,
     });
+
+    return {
+      messageId: sentMessage.message_id,
+      deliveredSignature: getTelegramRenderedPartSignature(part),
+    };
   } catch (error) {
     if (!isTelegramMarkdownParseError(error)) {
       throw error;
@@ -114,7 +144,49 @@ export async function sendRenderedBotPart({
       "[Bot] Entity payload rejected, retrying assistant message part in raw mode",
       error,
     );
-    await api.sendMessage(chatId, part.fallbackText, rawOptions);
+    const sentMessage = await api.sendMessage(chatId, part.fallbackText, rawOptions);
+    return {
+      messageId: sentMessage.message_id,
+      deliveredSignature: getTelegramRenderedPartSignature({ text: part.fallbackText }),
+    };
+  }
+}
+
+export async function editRenderedBotPart({
+  api,
+  chatId,
+  messageId,
+  part,
+  options,
+}: EditRenderedBotPartParams): Promise<RenderedPartDeliveryResult> {
+  const rawOptions = stripRichFormattingOptions(options);
+
+  if (!part.entities?.length) {
+    await api.editMessageText(chatId, messageId, part.text, rawOptions);
+    return {
+      deliveredSignature: getTelegramRenderedPartSignature({ text: part.text }),
+    };
+  }
+
+  try {
+    await api.editMessageText(chatId, messageId, part.text, {
+      ...(rawOptions || {}),
+      entities: part.entities,
+    });
+
+    return {
+      deliveredSignature: getTelegramRenderedPartSignature(part),
+    };
+  } catch (error) {
+    if (!isTelegramMarkdownParseError(error)) {
+      throw error;
+    }
+
+    logger.warn("[Bot] Entity payload rejected, retrying assistant edit part in raw mode", error);
+    await api.editMessageText(chatId, messageId, part.fallbackText, rawOptions);
+    return {
+      deliveredSignature: getTelegramRenderedPartSignature({ text: part.fallbackText }),
+    };
   }
 }
 

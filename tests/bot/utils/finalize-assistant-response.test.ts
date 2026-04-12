@@ -16,7 +16,15 @@ describe("bot/utils/finalize-assistant-response", () => {
       messageText: "final reply",
       responseStreamer,
       flushPendingServiceMessages,
-      prepareStreamingPayload: vi.fn(() => ({ parts: ["final reply"], format: "raw" as const })),
+      prepareStreamingPayload: vi.fn(() => ({
+        parts: [
+          {
+            text: "final reply",
+            fallbackText: "final reply",
+            source: "plain" as const,
+          },
+        ],
+      })),
       renderFinalParts: vi.fn(() => [
         {
           text: "part 1",
@@ -35,8 +43,13 @@ describe("bot/utils/finalize-assistant-response", () => {
     });
 
     expect(responseStreamer.complete).toHaveBeenCalledWith("s1", "m1", {
-      parts: ["final reply"],
-      format: "raw",
+      parts: [
+        {
+          text: "final reply",
+          fallbackText: "final reply",
+          source: "plain",
+        },
+      ],
       sendOptions: { disable_notification: true, reply_markup: keyboard },
       editOptions: undefined,
     });
@@ -69,7 +82,15 @@ describe("bot/utils/finalize-assistant-response", () => {
     };
     const flushPendingServiceMessages = vi.fn().mockResolvedValue(undefined);
     const sendRenderedPart = vi.fn().mockResolvedValue(undefined);
-    const prepareStreamingPayload = vi.fn(() => ({ parts: ["reply"], format: "raw" as const }));
+    const prepareStreamingPayload = vi.fn(() => ({
+      parts: [
+        {
+          text: "reply",
+          fallbackText: "reply",
+          source: "plain" as const,
+        },
+      ],
+    }));
     const keyboard = { keyboard: [[{ text: "ctx" }]] };
 
     await finalizeAssistantResponse({
@@ -91,8 +112,13 @@ describe("bot/utils/finalize-assistant-response", () => {
     });
 
     expect(responseStreamer.complete).toHaveBeenCalledWith("s1", "m1", {
-      parts: ["reply"],
-      format: "raw",
+      parts: [
+        {
+          text: "reply",
+          fallbackText: "reply",
+          source: "plain",
+        },
+      ],
       sendOptions: { disable_notification: true, reply_markup: keyboard },
       editOptions: undefined,
     });
@@ -106,7 +132,15 @@ describe("bot/utils/finalize-assistant-response", () => {
     };
     const flushPendingServiceMessages = vi.fn().mockResolvedValue(undefined);
     const sendRenderedPart = vi.fn().mockResolvedValue(undefined);
-    const prepareStreamingPayload = vi.fn(() => ({ parts: ["reply"], format: "raw" as const }));
+    const prepareStreamingPayload = vi.fn(() => ({
+      parts: [
+        {
+          text: "reply",
+          fallbackText: "reply",
+          source: "plain" as const,
+        },
+      ],
+    }));
 
     await finalizeAssistantResponse({
       sessionId: "s1",

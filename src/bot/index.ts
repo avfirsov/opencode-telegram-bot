@@ -50,11 +50,7 @@ import { clearAllInteractionState } from "../interaction/cleanup.js";
 import { keyboardManager } from "../keyboard/manager.js";
 import { subscribeToEvents } from "../opencode/events.js";
 import { summaryAggregator } from "../summary/aggregator.js";
-import {
-  formatSummaryWithMode,
-  formatToolInfo,
-  getAssistantParseMode,
-} from "../summary/formatter.js";
+import { formatToolInfo } from "../summary/formatter.js";
 import { renderSubagentCards } from "../summary/subagent-formatter.js";
 import { ToolMessageBatcher } from "../summary/tool-message-batcher.js";
 import { getCurrentSession } from "../session/manager.js";
@@ -71,7 +67,12 @@ import { downloadTelegramFile, toDataUri } from "./utils/file-download.js";
 import { finalizeAssistantResponse } from "./utils/finalize-assistant-response.js";
 import { sendTtsResponseForSession } from "./utils/send-tts-response.js";
 import { deliverThinkingMessage } from "./utils/thinking-message.js";
-import { sendBotText, sendRenderedBotPart } from "./utils/telegram-text.js";
+import {
+  editRenderedBotPart,
+  getTelegramRenderedPartSignature,
+  sendBotText,
+  sendRenderedBotPart,
+} from "./utils/telegram-text.js";
 import { formatAssistantRunFooter } from "./utils/assistant-run-footer.js";
 import { getModelCapabilities, supportsInput } from "../model/capabilities.js";
 import { getStoredModel } from "../model/manager.js";
@@ -82,11 +83,9 @@ import { assistantRunState } from "./assistant-run-state.js";
 import { ResponseStreamer } from "./streaming/response-streamer.js";
 import type { StreamingMessagePayload } from "./streaming/response-streamer.js";
 import { ToolCallStreamer, type ToolStreamKey } from "./streaming/tool-call-streamer.js";
-import {
-  editMessageWithMarkdownFallback,
-  sendMessageWithMarkdownFallback,
-} from "./utils/send-with-markdown-fallback.js";
-import { renderTelegramParts } from "../telegram/render/pipeline.js";
+import { chunkTelegramRenderedBlocks } from "../telegram/render/chunker.js";
+import { renderTelegramBlocks, renderTelegramParts } from "../telegram/render/pipeline.js";
+import type { TelegramRenderedBlock, TelegramRenderedPart } from "../telegram/render/types.js";
 
 let botInstance: Bot<Context> | null = null;
 let chatIdInstance: number | null = null;
@@ -123,32 +122,93 @@ function prepareDocumentCaption(caption: string): string {
   return `${normalizedCaption.slice(0, TELEGRAM_DOCUMENT_CAPTION_MAX_LENGTH - 3)}...`;
 }
 
+function createPlainRenderedBlock(text: string): TelegramRenderedBlock {
+  return {
+    blockType: "plain",
+    mode: "plain",
+    text,
+    fallbackText: text,
+    source: "plain",
+  };
+}
+
+function createPlainRenderedParts(text: string, maxPartLength: number): TelegramRenderedPart[] {
+  return chunkTelegramRenderedBlocks([createPlainRenderedBlock(text)], { maxPartLength });
+}
+
+function renderAssistantBlocksSafe(text: string): TelegramRenderedBlock[] {
+  if (!text) {
+    return [];
+  }
+
+  try {
+    return renderTelegramBlocks(text);
+  } catch (error) {
+    logger.warn(
+      "[Bot] Assistant block rendering failed, falling back to plain streaming block",
+      error,
+    );
+    return [createPlainRenderedBlock(text)];
+  }
+}
+
+function renderAssistantPartsSafe(text: string, maxPartLength = 4096): TelegramRenderedPart[] {
+  if (!text) {
+    return [];
+  }
+
+  try {
+    return renderTelegramParts(text, { maxPartLength });
+  } catch (error) {
+    logger.warn("[Bot] Assistant part rendering failed, falling back to plain text parts", error);
+    return createPlainRenderedParts(text, maxPartLength);
+  }
+}
+
+function getStableStreamingBoundary(messageText: string): number {
+  if (!messageText) {
+    return 0;
+  }
+
+  if (messageText.endsWith("\n\n")) {
+    return messageText.length;
+  }
+
+  const lastBlockSeparatorIndex = messageText.lastIndexOf("\n\n");
+  return lastBlockSeparatorIndex >= 0 ? lastBlockSeparatorIndex + 2 : 0;
+}
+
 function prepareStreamingPayload(messageText: string): StreamingMessagePayload | null {
-  const parts = formatSummaryWithMode(messageText, "raw", RESPONSE_STREAM_TEXT_LIMIT);
+  const stableBoundary = getStableStreamingBoundary(messageText);
+  const blocks: TelegramRenderedBlock[] = [];
+
+  if (stableBoundary > 0) {
+    blocks.push(...renderAssistantBlocksSafe(messageText.slice(0, stableBoundary)));
+  }
+
+  const unstableTail = stableBoundary > 0 ? messageText.slice(stableBoundary) : messageText;
+  if (unstableTail) {
+    blocks.push(createPlainRenderedBlock(unstableTail));
+  }
+
+  const parts = chunkTelegramRenderedBlocks(blocks, { maxPartLength: RESPONSE_STREAM_TEXT_LIMIT });
   if (parts.length === 0) {
     return null;
   }
 
   return {
     parts,
-    format: "raw",
   };
 }
 
 function prepareFinalStreamingPayload(messageText: string): StreamingMessagePayload | null {
-  const format = getAssistantParseMode() === "MarkdownV2" ? "markdown_v2" : "raw";
-  const parts = formatSummaryWithMode(
-    messageText,
-    format === "markdown_v2" ? "markdown" : "raw",
-    RESPONSE_STREAM_TEXT_LIMIT,
-  );
+  const parts = renderAssistantPartsSafe(messageText, RESPONSE_STREAM_TEXT_LIMIT);
   if (parts.length === 0) {
     return null;
   }
 
   return {
     parts,
-    format,
   };
 }
 
@@ -220,43 +280,38 @@ const toolMessageBatcher = new ToolMessageBatcher({
 
 const responseStreamer = new ResponseStreamer({
   throttleMs: RESPONSE_STREAM_THROTTLE_MS,
-  sendText: async (text, format, options) => {
+  sendPart: async (part, options) => {
     if (!botInstance || !chatIdInstance || chatIdInstance <= 0) {
       throw new Error("Bot context missing for streamed send");
     }
 
-    const parseMode = format === "markdown_v2" ? "MarkdownV2" : undefined;
-    const sentMessage = await sendMessageWithMarkdownFallback({
+    return sendRenderedBotPart({
       api: botInstance.api,
       chatId: chatIdInstance,
-      text,
+      part,
       options,
-      parseMode,
     });
-
-    return sentMessage.message_id;
   },
-  editText: async (messageId, text, format, options) => {
+  editPart: async (messageId, part, options) => {
     if (!botInstance || !chatIdInstance || chatIdInstance <= 0) {
       throw new Error("Bot context missing for streamed edit");
     }
 
-    const parseMode = format === "markdown_v2" ? "MarkdownV2" : undefined;
-
     try {
-      await editMessageWithMarkdownFallback({
+      return await editRenderedBotPart({
         api: botInstance.api,
         chatId: chatIdInstance,
         messageId,
-        text,
+        part,
         options,
-        parseMode,
       });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
       if (errorMessage.includes("message is not modified")) {
-        return;
+        return {
+          deliveredSignature: getTelegramRenderedPartSignature(part),
+        };
       }
 
       throw error;
@@ -464,7 +519,7 @@ async function ensureEventSubscription(directory: string): Promise<void> {
               toolCallStreamer.breakSession(sessionId, "assistant_message_completed"),
             ]).then(() => undefined),
           prepareStreamingPayload: prepareFinalStreamingPayload,
-          renderFinalParts: (text) => renderTelegramParts(text),
+          renderFinalParts: (text) => renderAssistantPartsSafe(text),
           getReplyKeyboard: getCurrentReplyKeyboard,
           sendRenderedPart: async (part, options) => {
             await sendRenderedBotPart({

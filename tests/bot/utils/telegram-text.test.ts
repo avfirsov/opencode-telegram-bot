@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  editRenderedBotPart,
   editBotText,
+  getTelegramRenderedPartSignature,
   sendBotText,
   sendRenderedBotPart,
 } from "../../../src/bot/utils/telegram-text.js";
@@ -74,18 +76,26 @@ describe("bot/utils/telegram-text", () => {
   });
 
   it("sends rendered parts with entities and no parse mode", async () => {
-    const sendMessage = vi.fn().mockResolvedValue(undefined);
+    const sendMessage = vi.fn().mockResolvedValue({ message_id: 123 });
 
-    await sendRenderedBotPart({
-      api: { sendMessage },
-      chatId: 100,
-      part: {
+    await expect(
+      sendRenderedBotPart({
+        api: { sendMessage },
+        chatId: 100,
+        part: {
+          text: "Hello",
+          entities: [{ type: "bold", offset: 0, length: 5 }],
+          fallbackText: "Hello",
+          source: "entities",
+        },
+        options: { reply_markup: { keyboard: [] }, parse_mode: "MarkdownV2" },
+      }),
+    ).resolves.toEqual({
+      messageId: 123,
+      deliveredSignature: getTelegramRenderedPartSignature({
         text: "Hello",
         entities: [{ type: "bold", offset: 0, length: 5 }],
-        fallbackText: "Hello",
-        source: "entities",
-      },
-      options: { reply_markup: { keyboard: [] }, parse_mode: "MarkdownV2" },
+      }),
     });
 
     expect(sendMessage).toHaveBeenCalledTimes(1);
@@ -96,17 +106,22 @@ describe("bot/utils/telegram-text", () => {
   });
 
   it("sends plain rendered parts without entities", async () => {
-    const sendMessage = vi.fn().mockResolvedValue(undefined);
+    const sendMessage = vi.fn().mockResolvedValue({ message_id: 321 });
 
-    await sendRenderedBotPart({
-      api: { sendMessage },
-      chatId: 100,
-      part: {
-        text: "plain text",
-        fallbackText: "plain text",
-        source: "plain",
-      },
-      options: { reply_markup: { keyboard: [] } },
+    await expect(
+      sendRenderedBotPart({
+        api: { sendMessage },
+        chatId: 100,
+        part: {
+          text: "plain text",
+          fallbackText: "plain text",
+          source: "plain",
+        },
+        options: { reply_markup: { keyboard: [] } },
+      }),
+    ).resolves.toEqual({
+      messageId: 321,
+      deliveredSignature: getTelegramRenderedPartSignature({ text: "plain text" }),
     });
 
     expect(sendMessage).toHaveBeenCalledTimes(1);
@@ -119,18 +134,23 @@ describe("bot/utils/telegram-text", () => {
     const sendMessage = vi
       .fn()
       .mockRejectedValueOnce(new Error("Bad Request: can't parse entities: unsupported start tag"))
-      .mockResolvedValueOnce(undefined);
+      .mockResolvedValueOnce({ message_id: 222 });
 
-    await sendRenderedBotPart({
-      api: { sendMessage },
-      chatId: 100,
-      part: {
-        text: "Hello",
-        entities: [{ type: "bold", offset: 0, length: 5 }],
-        fallbackText: "Hello raw",
-        source: "entities",
-      },
-      options: { reply_markup: { keyboard: [] }, parse_mode: "MarkdownV2" },
+    await expect(
+      sendRenderedBotPart({
+        api: { sendMessage },
+        chatId: 100,
+        part: {
+          text: "Hello",
+          entities: [{ type: "bold", offset: 0, length: 5 }],
+          fallbackText: "Hello raw",
+          source: "entities",
+        },
+        options: { reply_markup: { keyboard: [] }, parse_mode: "MarkdownV2" },
+      }),
+    ).resolves.toEqual({
+      messageId: 222,
+      deliveredSignature: getTelegramRenderedPartSignature({ text: "Hello raw" }),
     });
 
     expect(sendMessage).toHaveBeenCalledTimes(2);
@@ -140,6 +160,39 @@ describe("bot/utils/telegram-text", () => {
     });
     expect(sendMessage).toHaveBeenNthCalledWith(2, 100, "Hello raw", {
       reply_markup: { keyboard: [] },
+    });
+  });
+
+  it("edits rendered parts with entities and raw fallback", async () => {
+    const editMessageText = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("Bad Request: can't parse entities: unsupported start tag"))
+      .mockResolvedValueOnce(undefined);
+
+    await expect(
+      editRenderedBotPart({
+        api: { editMessageText },
+        chatId: 100,
+        messageId: 500,
+        part: {
+          text: "Hello",
+          entities: [{ type: "italic", offset: 0, length: 5 }],
+          fallbackText: "Hello raw",
+          source: "entities",
+        },
+        options: { reply_markup: { inline_keyboard: [] }, parse_mode: "MarkdownV2" },
+      }),
+    ).resolves.toEqual({
+      deliveredSignature: getTelegramRenderedPartSignature({ text: "Hello raw" }),
+    });
+
+    expect(editMessageText).toHaveBeenCalledTimes(2);
+    expect(editMessageText).toHaveBeenNthCalledWith(1, 100, 500, "Hello", {
+      reply_markup: { inline_keyboard: [] },
+      entities: [{ type: "italic", offset: 0, length: 5 }],
+    });
+    expect(editMessageText).toHaveBeenNthCalledWith(2, 100, 500, "Hello raw", {
+      reply_markup: { inline_keyboard: [] },
     });
   });
 });
