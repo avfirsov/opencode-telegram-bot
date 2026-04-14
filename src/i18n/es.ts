@@ -434,20 +434,6 @@ export const es: I18nDictionary = {
 
   "cmd.description.rename": "Renombrar la sesión actual",
 
-  "cli.usage":
-    "Uso:\n  opencode-telegram [start] [--mode sources|installed]\n  opencode-telegram status\n  opencode-telegram stop\n  opencode-telegram config\n\nNotas:\n  - Sin comando, el valor por defecto es `start`\n  - `--mode` actualmente solo se admite para `start`",
-  "cli.placeholder.status":
-    "El comando `status` es actualmente un marcador de posición. Las comprobaciones reales de estado se agregarán en la capa de servicio (Fase 5).",
-  "cli.placeholder.stop":
-    "El comando `stop` es actualmente un marcador de posición. La detención real del proceso en segundo plano se agregará en la capa de servicio (Fase 5).",
-  "cli.placeholder.unavailable": "El comando no esta disponible.",
-  "cli.error.prefix": "Error de CLI: {message}",
-  "cli.args.unknown_command": "Comando desconocido: {value}",
-  "cli.args.mode_requires_value": "La opción --mode requiere un valor: sources|installed",
-  "cli.args.invalid_mode": "Valor de --mode inválido: {value}. Se espera sources|installed",
-  "cli.args.unknown_option": "Opción desconocida: {value}",
-  "cli.args.mode_only_start": "La opción --mode solo se admite para el comando start",
-
   "legacy.models.fetch_error":
     "🔴 No se pudo obtener la lista de modelos. Revisa el estado del servidor con /status.",
   "legacy.models.empty": "📋 No hay modelos disponibles. Configura los proveedores en OpenCode.",

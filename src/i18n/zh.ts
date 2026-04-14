@@ -382,19 +382,6 @@ export const zh: I18nDictionary = {
 
   "cmd.description.rename": "重命名当前会话",
 
-  "cli.usage":
-    "用法:\n  opencode-telegram [start] [--mode sources|installed]\n  opencode-telegram status\n  opencode-telegram stop\n  opencode-telegram config\n\n注意:\n  - 无命令时默认为 `start`\n  - `--mode` 当前仅支持 `start`",
-  "cli.placeholder.status": "`status` 命令当前为占位符。实际状态检查将在服务层中添加（第5阶段）。",
-  "cli.placeholder.stop":
-    "`stop` 命令当前为占位符。实际后台进程停止功能将在服务层中添加（第5阶段）。",
-  "cli.placeholder.unavailable": "命令不可用。",
-  "cli.error.prefix": "CLI 错误：{message}",
-  "cli.args.unknown_command": "未知命令：{value}",
-  "cli.args.mode_requires_value": "选项 --mode 需要一个值：sources|installed",
-  "cli.args.invalid_mode": "无效的 --mode 值：{value}。期望 sources|installed",
-  "cli.args.unknown_option": "未知选项：{value}",
-  "cli.args.mode_only_start": "选项 --mode 仅支持 start 命令",
-
   "legacy.models.fetch_error": "🔴 获取模型列表失败。请使用 /status 检查服务器状态。",
   "legacy.models.empty": "📋 没有可用模型。请在 OpenCode 中配置 providers。",
   "legacy.models.header": "📋 可用模型：\n\n",

@@ -73,7 +73,7 @@ opencode serve
 The fastest way — run directly with `npx`:
 
 ```bash
-npx @grinev/opencode-telegram-bot
+npx @grinev/opencode-telegram-bot@latest
 ```
 
 > Quick start is for npm usage. You do not need to clone this repository. If you run this command from the source directory (repository root), it may fail with `opencode-telegram: not found`. To run from sources, use the [Development](#development) section.
@@ -86,6 +86,18 @@ On first launch, an interactive wizard will guide you through the configuration 
 npm install -g @grinev/opencode-telegram-bot
 opencode-telegram start
 ```
+
+`start` runs in the foreground by default. This is the recommended mode for `systemd`, Docker, local debugging, and other external process managers.
+
+To run the bot in the built-in background mode instead:
+
+```bash
+opencode-telegram start --daemon
+opencode-telegram status
+opencode-telegram stop
+```
+
+> Built-in daemon mode is intended for standalone npm installs without an external supervisor. For `systemd`, `pm2`, or Docker, keep using `opencode-telegram start` without `--daemon`.
 
 To reconfigure at any time:
 

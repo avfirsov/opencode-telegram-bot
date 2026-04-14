@@ -1,6 +1,7 @@
+import fs from "node:fs/promises";
 import { readFile } from "node:fs/promises";
 
-import { createBot } from "../bot/index.js";
+import { cleanupBotRuntime, createBot } from "../bot/index.js";
 import { config } from "../config.js";
 import { loadSettings } from "../settings/manager.js";
 import { processManager } from "../process/manager.js";
@@ -9,7 +10,11 @@ import { warmupSessionDirectoryCache } from "../session/cache-manager.js";
 import { reconcileStoredModelSelection } from "../model/manager.js";
 import { getRuntimeMode } from "../runtime/mode.js";
 import { getRuntimePaths } from "../runtime/paths.js";
+import { clearServiceStateFile } from "../service/manager.js";
+import { getServiceStateFilePathFromEnv, isServiceChildProcess } from "../service/runtime.js";
 import { getLogFilePath, initializeLogger, logger } from "../utils/logger.js";
+
+const SHUTDOWN_TIMEOUT_MS = 5000;
 
 async function getBotVersion(): Promise<string> {
   try {
@@ -48,6 +53,67 @@ export async function startBotApp(): Promise<void> {
   const bot = createBot();
   await scheduledTaskRuntime.initialize(bot);
 
+  let shutdownStarted = false;
+  let serviceStateCleared = false;
+  let shutdownTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  const clearManagedServiceState = async (): Promise<void> => {
+    if (!isServiceChildProcess() || serviceStateCleared) {
+      return;
+    }
+
+    const stateFilePath = getServiceStateFilePathFromEnv();
+    if (!stateFilePath) {
+      return;
+    }
+
+    try {
+      await fs.access(stateFilePath);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+        serviceStateCleared = true;
+        return;
+      }
+
+      throw error;
+    }
+
+    await clearServiceStateFile(stateFilePath);
+    serviceStateCleared = true;
+  };
+
+  const shutdown = (signal: NodeJS.Signals): void => {
+    if (shutdownStarted) {
+      return;
+    }
+
+    shutdownStarted = true;
+    logger.info(`[App] Received ${signal}, shutting down...`);
+    cleanupBotRuntime(`app_shutdown_${signal.toLowerCase()}`);
+    scheduledTaskRuntime.shutdown();
+
+    shutdownTimeout = setTimeout(() => {
+      logger.warn(`[App] Shutdown did not finish in ${SHUTDOWN_TIMEOUT_MS}ms, forcing exit.`);
+      process.exit(0);
+    }, SHUTDOWN_TIMEOUT_MS);
+    shutdownTimeout.unref?.();
+
+    try {
+      bot.stop();
+    } catch (error) {
+      logger.warn("[App] Failed to stop Telegram bot cleanly", error);
+    }
+
+    void clearManagedServiceState().catch((error) => {
+      logger.warn("[App] Failed to clear managed service state", error);
+    });
+  };
+
+  const handleSigint = (): void => shutdown("SIGINT");
+  const handleSigterm = (): void => shutdown("SIGTERM");
+  process.on("SIGINT", handleSigint);
+  process.on("SIGTERM", handleSigterm);
+
   const webhookInfo = await bot.api.getWebhookInfo();
   if (webhookInfo.url) {
     logger.info(`[Bot] Webhook detected: ${webhookInfo.url}, removing...`);
@@ -55,9 +121,23 @@ export async function startBotApp(): Promise<void> {
     logger.info("[Bot] Webhook removed, switching to long polling");
   }
 
-  await bot.start({
-    onStart: (botInfo) => {
-      logger.info(`Bot @${botInfo.username} started!`);
-    },
-  });
+  try {
+    await bot.start({
+      onStart: (botInfo) => {
+        logger.info(`Bot @${botInfo.username} started!`);
+      },
+    });
+  } finally {
+    process.off("SIGINT", handleSigint);
+    process.off("SIGTERM", handleSigterm);
+    if (shutdownTimeout) {
+      clearTimeout(shutdownTimeout);
+      shutdownTimeout = null;
+    }
+    cleanupBotRuntime("app_shutdown_complete");
+    scheduledTaskRuntime.shutdown();
+    await clearManagedServiceState().catch((error) => {
+      logger.warn("[App] Failed to clear managed service state", error);
+    });
+  }
 }

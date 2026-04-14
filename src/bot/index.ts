@@ -48,7 +48,7 @@ import { questionManager } from "../question/manager.js";
 import { interactionManager } from "../interaction/manager.js";
 import { clearAllInteractionState } from "../interaction/cleanup.js";
 import { keyboardManager } from "../keyboard/manager.js";
-import { subscribeToEvents } from "../opencode/events.js";
+import { stopEventListening, subscribeToEvents } from "../opencode/events.js";
 import { summaryAggregator } from "../summary/aggregator.js";
 import { formatToolInfo } from "../summary/formatter.js";
 import { renderSubagentCards } from "../summary/subagent-formatter.js";
@@ -92,6 +92,7 @@ import {
 let botInstance: Bot<Context> | null = null;
 let chatIdInstance: number | null = null;
 let commandsInitialized = false;
+let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
 const TELEGRAM_DOCUMENT_CAPTION_MAX_LENGTH = 1024;
 const RESPONSE_STREAM_THROTTLE_MS = config.bot.responseStreamThrottleMs;
@@ -882,6 +883,11 @@ export function createBot(): Bot<Context> {
   sessionCompletionTasks.clear();
   assistantRunState.clearAll("bot_startup");
 
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer);
+    heartbeatTimer = null;
+  }
+
   const botOptions: ConstructorParameters<typeof Bot<Context>>[1] = {};
 
   if (config.telegram.proxyUrl) {
@@ -908,7 +914,7 @@ export function createBot(): Bot<Context> {
 
   // Heartbeat for diagnostics: verify the event loop is not blocked
   let heartbeatCounter = 0;
-  setInterval(() => {
+  heartbeatTimer = setInterval(() => {
     heartbeatCounter++;
     if (heartbeatCounter % 6 === 0) {
       // Log every 30 seconds (5 sec * 6)
@@ -1288,4 +1294,22 @@ export function createBot(): Bot<Context> {
   });
 
   return bot;
+}
+
+export function cleanupBotRuntime(reason: string): void {
+  stopEventListening();
+  summaryAggregator.clear();
+  responseStreamer.clearAll(reason);
+  toolCallStreamer.clearAll(reason);
+  toolMessageBatcher.clearAll(reason);
+  sessionCompletionTasks.clear();
+  assistantRunState.clearAll(reason);
+
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer);
+    heartbeatTimer = null;
+  }
+
+  botInstance = null;
+  chatIdInstance = null;
 }

@@ -422,20 +422,6 @@ export const ru: I18nDictionary = {
 
   "cmd.description.rename": "Переименовать текущую сессию",
 
-  "cli.usage":
-    "Использование:\n  opencode-telegram [start] [--mode sources|installed]\n  opencode-telegram status\n  opencode-telegram stop\n  opencode-telegram config\n\nЗаметки:\n  - Без команды по умолчанию используется `start`\n  - `--mode` сейчас поддерживается только для `start`",
-  "cli.placeholder.status":
-    "Команда `status` пока работает как заглушка. Реальная проверка статуса появится на этапе service-слоя (Этап 5).",
-  "cli.placeholder.stop":
-    "Команда `stop` пока работает как заглушка. Реальная остановка фонового процесса появится на этапе service-слоя (Этап 5).",
-  "cli.placeholder.unavailable": "Команда недоступна.",
-  "cli.error.prefix": "CLI error: {message}",
-  "cli.args.unknown_command": "Неизвестная команда: {value}",
-  "cli.args.mode_requires_value": "Опция --mode требует значение: sources|installed",
-  "cli.args.invalid_mode": "Некорректное значение --mode: {value}. Ожидается sources|installed",
-  "cli.args.unknown_option": "Неизвестная опция: {value}",
-  "cli.args.mode_only_start": "Опция --mode поддерживается только для команды start",
-
   "legacy.models.fetch_error":
     "🔴 Не удалось получить список моделей. Проверьте статус сервера /status.",
   "legacy.models.empty": "📋 Нет доступных моделей. Настройте провайдеры через OpenCode.",

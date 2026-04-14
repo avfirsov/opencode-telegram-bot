@@ -419,20 +419,6 @@ export const en = {
 
   "cmd.description.rename": "Rename current session",
 
-  "cli.usage":
-    "Usage:\n  opencode-telegram [start] [--mode sources|installed]\n  opencode-telegram status\n  opencode-telegram stop\n  opencode-telegram config\n\nNotes:\n  - No command defaults to `start`\n  - `--mode` is currently supported for `start` only",
-  "cli.placeholder.status":
-    "Command `status` is currently a placeholder. Real status checks will be added in service layer (Phase 5).",
-  "cli.placeholder.stop":
-    "Command `stop` is currently a placeholder. Real background process stop will be added in service layer (Phase 5).",
-  "cli.placeholder.unavailable": "Command is unavailable.",
-  "cli.error.prefix": "CLI error: {message}",
-  "cli.args.unknown_command": "Unknown command: {value}",
-  "cli.args.mode_requires_value": "Option --mode requires a value: sources|installed",
-  "cli.args.invalid_mode": "Invalid mode value: {value}. Expected sources|installed",
-  "cli.args.unknown_option": "Unknown option: {value}",
-  "cli.args.mode_only_start": "Option --mode is supported only for the start command",
-
   "legacy.models.fetch_error": "🔴 Failed to get models list. Check server status with /status.",
   "legacy.models.empty": "📋 No available models. Configure providers in OpenCode.",
   "legacy.models.header": "📋 Available models:\n\n",

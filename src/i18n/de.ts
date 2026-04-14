@@ -435,20 +435,6 @@ export const de: I18nDictionary = {
 
   "cmd.description.rename": "Aktuelle Sitzung umbenennen",
 
-  "cli.usage":
-    "Verwendung:\n  opencode-telegram [start] [--mode sources|installed]\n  opencode-telegram status\n  opencode-telegram stop\n  opencode-telegram config\n\nHinweise:\n  - Ohne Befehl wird standardmäßig `start` verwendet\n  - `--mode` wird derzeit nur für `start` unterstützt",
-  "cli.placeholder.status":
-    "Befehl `status` ist derzeit ein Platzhalter. Echte Statusprüfungen werden in der Service-Schicht hinzugefügt (Phase 5).",
-  "cli.placeholder.stop":
-    "Befehl `stop` ist derzeit ein Platzhalter. Ein echter Stop des Hintergrundprozesses wird in der Service-Schicht hinzugefügt (Phase 5).",
-  "cli.placeholder.unavailable": "Befehl ist nicht verfügbar.",
-  "cli.error.prefix": "CLI-Fehler: {message}",
-  "cli.args.unknown_command": "Unbekannter Befehl: {value}",
-  "cli.args.mode_requires_value": "Option --mode erfordert einen Wert: sources|installed",
-  "cli.args.invalid_mode": "Ungültiger Wert für --mode: {value}. Erwartet sources|installed",
-  "cli.args.unknown_option": "Unbekannte Option: {value}",
-  "cli.args.mode_only_start": "Option --mode wird nur für den start-Befehl unterstützt",
-
   "legacy.models.fetch_error":
     "🔴 Modellliste konnte nicht geladen werden. Prüfe den Serverstatus mit /status.",
   "legacy.models.empty": "📋 Keine verfügbaren Modelle. Konfiguriere Provider in OpenCode.",

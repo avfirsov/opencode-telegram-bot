@@ -169,6 +169,16 @@ export class ScheduledTaskRuntime {
     }
   }
 
+  shutdown(): void {
+    for (const timer of this.timersByTaskId.values()) {
+      clearTimeout(timer);
+    }
+
+    this.timersByTaskId.clear();
+    this.runningTaskIds.clear();
+    this.initialized = false;
+  }
+
   __resetForTests(): void {
     for (const timer of this.timersByTaskId.values()) {
       clearTimeout(timer);

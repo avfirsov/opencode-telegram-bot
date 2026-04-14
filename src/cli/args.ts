@@ -1,11 +1,20 @@
 import type { RuntimeMode } from "../runtime/mode.js";
-import { t } from "../i18n/index.js";
 
 export type CliCommand = "start" | "status" | "stop" | "config";
+
+const CLI_MESSAGES = {
+  unknownCommand: (value: string) => `Unknown command: ${value}`,
+  modeRequiresValue: "Option --mode requires a value: sources|installed",
+  invalidMode: (value: string) => `Invalid mode value: ${value}. Expected sources|installed`,
+  unknownOption: (value: string) => `Unknown option: ${value}`,
+  modeOnlyStart: "Option --mode is supported only for the start command",
+  daemonOnlyStart: "Option --daemon is supported only for the start command",
+} as const;
 
 export interface ParsedCliArgs {
   command: CliCommand;
   mode?: RuntimeMode;
+  daemon: boolean;
   showHelp: boolean;
   error?: string;
 }
@@ -32,6 +41,7 @@ export function parseCliArgs(argv: string[]): ParsedCliArgs {
   const args = [...argv];
   let command: CliCommand = "start";
   let mode: RuntimeMode | undefined;
+  let daemon = false;
   let showHelp = false;
   let currentIndex = 0;
 
@@ -40,8 +50,9 @@ export function parseCliArgs(argv: string[]): ParsedCliArgs {
     if (!isCliCommand(firstArg)) {
       return {
         command,
+        daemon,
         showHelp: true,
-        error: t("cli.args.unknown_command", { value: firstArg }),
+        error: CLI_MESSAGES.unknownCommand(firstArg),
       };
     }
 
@@ -58,14 +69,21 @@ export function parseCliArgs(argv: string[]): ParsedCliArgs {
       continue;
     }
 
+    if (token === "--daemon") {
+      daemon = true;
+      currentIndex += 1;
+      continue;
+    }
+
     if (token === "--mode") {
       const modeValue = args[currentIndex + 1];
       if (!modeValue || modeValue.startsWith("-")) {
         return {
           command,
+          daemon,
           mode,
           showHelp: true,
-          error: t("cli.args.mode_requires_value"),
+          error: CLI_MESSAGES.modeRequiresValue,
         };
       }
 
@@ -73,9 +91,10 @@ export function parseCliArgs(argv: string[]): ParsedCliArgs {
       if (!parsedMode) {
         return {
           command,
+          daemon,
           mode,
           showHelp: true,
-          error: t("cli.args.invalid_mode", { value: modeValue }),
+          error: CLI_MESSAGES.invalidMode(modeValue),
         };
       }
 
@@ -90,9 +109,10 @@ export function parseCliArgs(argv: string[]): ParsedCliArgs {
       if (!parsedMode) {
         return {
           command,
+          daemon,
           mode,
           showHelp: true,
-          error: t("cli.args.invalid_mode", { value: modeValue }),
+          error: CLI_MESSAGES.invalidMode(modeValue),
         };
       }
 
@@ -103,23 +123,36 @@ export function parseCliArgs(argv: string[]): ParsedCliArgs {
 
     return {
       command,
+      daemon,
       mode,
       showHelp: true,
-      error: t("cli.args.unknown_option", { value: token }),
+      error: CLI_MESSAGES.unknownOption(token),
     };
   }
 
   if (command !== "start" && mode) {
     return {
       command,
+      daemon,
       mode,
       showHelp: true,
-      error: t("cli.args.mode_only_start"),
+      error: CLI_MESSAGES.modeOnlyStart,
+    };
+  }
+
+  if (command !== "start" && daemon) {
+    return {
+      command,
+      daemon,
+      mode,
+      showHelp: true,
+      error: CLI_MESSAGES.daemonOnlyStart,
     };
   }
 
   return {
     command,
+    daemon,
     mode,
     showHelp,
   };
