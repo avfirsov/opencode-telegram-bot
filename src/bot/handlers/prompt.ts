@@ -20,6 +20,11 @@ import { logger } from "../../utils/logger.js";
 import { t } from "../../i18n/index.js";
 import { foregroundSessionState } from "../../scheduled-task/foreground-state.js";
 import { assistantRunState } from "../assistant-run-state.js";
+import {
+  detachAttachedSession,
+  markAttachedSessionBusy,
+  markAttachedSessionIdle,
+} from "../../attach/service.js";
 
 /** Module-level references for async callbacks that don't have ctx. */
 let botInstance: Bot<Context> | null = null;
@@ -77,6 +82,7 @@ async function isSessionBusy(sessionId: string, directory: string): Promise<bool
 }
 
 async function resetMismatchedSessionContext(): Promise<void> {
+  detachAttachedSession("session_mismatch_reset");
   stopEventListening();
   summaryAggregator.clear();
   foregroundSessionState.clearAll("session_mismatch_reset");
@@ -289,6 +295,7 @@ export async function processUserPrompt(
     );
 
     foregroundSessionState.markBusy(currentSession.id);
+    await markAttachedSessionBusy(currentSession.id);
     assistantRunState.startRun(currentSession.id, {
       startedAt: Date.now(),
       configuredAgent: currentAgent,
@@ -307,6 +314,7 @@ export async function processUserPrompt(
       onSuccess: ({ error }) => {
         if (error) {
           foregroundSessionState.markIdle(currentSession.id);
+          void markAttachedSessionIdle(currentSession.id);
           assistantRunState.clearRun(currentSession.id, "session_prompt_api_error");
           clearPromptResponseMode(currentSession.id);
           const details = formatErrorDetails(error, 6000);
@@ -326,6 +334,7 @@ export async function processUserPrompt(
       },
       onError: (error) => {
         foregroundSessionState.markIdle(currentSession.id);
+        void markAttachedSessionIdle(currentSession.id);
         assistantRunState.clearRun(currentSession.id, "session_prompt_background_error");
         clearPromptResponseMode(currentSession.id);
         const details = formatErrorDetails(error, 6000);
@@ -340,6 +349,7 @@ export async function processUserPrompt(
   } catch (err) {
     if (currentSession) {
       foregroundSessionState.markIdle(currentSession.id);
+      await markAttachedSessionIdle(currentSession.id);
       assistantRunState.clearRun(currentSession.id, "session_prompt_handler_error");
     }
     logger.error("Error in prompt handler:", err);

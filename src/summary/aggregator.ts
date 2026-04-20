@@ -71,7 +71,7 @@ type ToolCallback = (toolInfo: ToolInfo) => void;
 
 type ToolFileCallback = (fileInfo: ToolFileInfo) => void;
 
-type QuestionCallback = (questions: Question[], requestID: string) => void;
+type QuestionCallback = (questions: Question[], requestID: string, sessionId: string) => void;
 
 type QuestionErrorCallback = () => void;
 
@@ -1682,7 +1682,7 @@ class SummaryAggregator {
       const callback = this.onQuestionCallback;
       setImmediate(async () => {
         try {
-          await callback(questions as Question[], id);
+          await callback(questions as Question[], id, sessionID);
         } catch (err) {
           logger.error("[Aggregator] Error in question callback:", err);
         }

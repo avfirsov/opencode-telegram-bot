@@ -19,6 +19,11 @@ import { t } from "../../i18n/index.js";
 import { foregroundSessionState } from "../../scheduled-task/foreground-state.js";
 import { config } from "../../config.js";
 import { assistantRunState } from "../assistant-run-state.js";
+import {
+  detachAttachedSession,
+  markAttachedSessionBusy,
+  markAttachedSessionIdle,
+} from "../../attach/service.js";
 
 const COMMANDS_CALLBACK_PREFIX = "commands:";
 const COMMANDS_CALLBACK_SELECT_PREFIX = `${COMMANDS_CALLBACK_PREFIX}select:`;
@@ -364,6 +369,7 @@ async function ensureSessionForProject(
     logger.warn(
       `[Commands] Session/project mismatch detected. sessionDirectory=${currentSession.directory}, projectDirectory=${projectDirectory}. Resetting session context.`,
     );
+    detachAttachedSession("session_mismatch_reset");
     clearSession();
     summaryAggregator.clear();
     foregroundSessionState.clearAll("session_mismatch_reset");
@@ -436,6 +442,7 @@ async function executeCommand(
       : undefined;
 
   foregroundSessionState.markBusy(session.id);
+  await markAttachedSessionBusy(session.id);
   assistantRunState.startRun(session.id, {
     startedAt: Date.now(),
     configuredAgent: currentAgent,
@@ -458,6 +465,7 @@ async function executeCommand(
     onSuccess: ({ error }) => {
       if (error) {
         foregroundSessionState.markIdle(session.id);
+        void markAttachedSessionIdle(session.id);
         assistantRunState.clearRun(session.id, "session_command_api_error");
         logger.error("[Commands] OpenCode API returned an error for session.command", {
           sessionId: session.id,
@@ -475,6 +483,7 @@ async function executeCommand(
     },
     onError: (error) => {
       foregroundSessionState.markIdle(session.id);
+      void markAttachedSessionIdle(session.id);
       assistantRunState.clearRun(session.id, "session_command_background_error");
       logger.error("[Commands] session.command background task failed", {
         sessionId: session.id,
