@@ -24,6 +24,7 @@ import {
   markAttachedSessionBusy,
   markAttachedSessionIdle,
 } from "../../attach/service.js";
+import { externalUserInputSuppressionManager } from "../../external-input/suppression.js";
 
 const COMMANDS_CALLBACK_PREFIX = "commands:";
 const COMMANDS_CALLBACK_SELECT_PREFIX = `${COMMANDS_CALLBACK_PREFIX}select:`;
@@ -449,6 +450,10 @@ async function executeCommand(
     configuredProviderID: storedModel.providerID,
     configuredModelID: storedModel.modelID,
   });
+  externalUserInputSuppressionManager.register(
+    session.id,
+    args ? `/${params.commandName} ${args}` : `/${params.commandName}`,
+  );
 
   safeBackgroundTask({
     taskName: "session.command",

@@ -75,6 +75,7 @@ export const fr: I18nDictionary = {
   "bot.session_error": "🔴 OpenCode a renvoyé une erreur : {message}",
   "bot.session_retry":
     "🔁 {message}\n\nLe fournisseur renvoie la même erreur à chaque nouvelle tentative. Utilisez /abort pour arrêter.",
+  "bot.external_user_input": "Entrée utilisateur externe",
   "bot.unknown_command":
     "⚠️ Commande inconnue : {command}. Utilisez /help pour voir les commandes disponibles.",
   "bot.photo_downloading": "⏳ Téléchargement de la photo...",

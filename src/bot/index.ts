@@ -92,11 +92,13 @@ import type { StreamingMessagePayload } from "./streaming/response-streamer.js";
 import { ToolCallStreamer, type ToolStreamKey } from "./streaming/tool-call-streamer.js";
 import { attachManager } from "../attach/manager.js";
 import { markAttachedSessionBusy, markAttachedSessionIdle } from "../attach/service.js";
+import { externalUserInputSuppressionManager } from "../external-input/suppression.js";
 import {
   prepareAssistantFinalStreamingPayload,
   prepareAssistantStreamingPayload,
   renderAssistantFinalPartsSafe,
 } from "./utils/assistant-rendering.js";
+import { deliverExternalUserInputNotification } from "./utils/external-user-input.js";
 
 let botInstance: Bot<Context> | null = null;
 let chatIdInstance: number | null = null;
@@ -510,6 +512,28 @@ async function ensureEventSubscription(directory: string): Promise<void> {
         foregroundSessionState.markIdle(sessionId);
       } finally {
         await scheduledTaskRuntime.flushDeferredDeliveries();
+      }
+    });
+  });
+
+  summaryAggregator.setOnExternalUserInput(async (sessionId, _messageId, messageText) => {
+    void enqueueSessionCompletionTask(sessionId, async () => {
+      if (!botInstance || !chatIdInstance) {
+        return;
+      }
+
+      try {
+        await deliverExternalUserInputNotification({
+          api: botInstance.api,
+          chatId: chatIdInstance,
+          currentSessionId: getCurrentSession()?.id ?? null,
+          sessionId,
+          text: messageText,
+          consumeSuppressedInput: (incomingSessionId, incomingText) =>
+            externalUserInputSuppressionManager.consume(incomingSessionId, incomingText),
+        });
+      } catch (err) {
+        logger.error("[Bot] Failed to deliver external user input to Telegram:", err);
       }
     });
   });

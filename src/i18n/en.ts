@@ -72,6 +72,7 @@ export const en = {
   "bot.session_error": "🔴 OpenCode returned an error: {message}",
   "bot.session_retry":
     "🔁 {message}\n\nProvider keeps returning the same error on repeated retries. Use /abort to abort.",
+  "bot.external_user_input": "External user input",
   "bot.unknown_command": "⚠️ Unknown command: {command}. Use /help to see available commands.",
   "bot.photo_downloading": "⏳ Downloading photo...",
   "bot.photo_too_large": "⚠️ Photo is too large (max {maxSizeMb}MB)",

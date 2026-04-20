@@ -25,6 +25,7 @@ import {
   markAttachedSessionBusy,
   markAttachedSessionIdle,
 } from "../../attach/service.js";
+import { externalUserInputSuppressionManager } from "../../external-input/suppression.js";
 
 /** Module-level references for async callbacks that don't have ctx. */
 let botInstance: Bot<Context> | null = null;
@@ -303,6 +304,10 @@ export async function processUserPrompt(
       configuredModelID: storedModel.modelID,
     });
     setPromptResponseMode(currentSession.id, responseMode);
+
+    if (text.trim().length > 0) {
+      externalUserInputSuppressionManager.register(currentSession.id, text);
+    }
 
     // CRITICAL: DO NOT wait for session.prompt to complete.
     // If we wait, the handler will not finish and grammY will not call getUpdates,

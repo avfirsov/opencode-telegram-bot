@@ -75,6 +75,7 @@ export const de: I18nDictionary = {
   "bot.session_error": "🔴 OpenCode meldete einen Fehler: {message}",
   "bot.session_retry":
     "🔁 {message}\n\nDer Provider liefert bei wiederholten Versuchen immer wieder denselben Fehler. Mit /abort abbrechen.",
+  "bot.external_user_input": "Externe Benutzereingabe",
   "bot.unknown_command":
     "⚠️ Unbekannter Befehl: {command}. Nutze /help, um verfügbare Befehle zu sehen.",
   "bot.photo_downloading": "⏳ Lade Foto herunter...",

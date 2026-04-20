@@ -71,6 +71,7 @@ export const ru: I18nDictionary = {
   "bot.session_error": "🔴 OpenCode вернул ошибку: {message}",
   "bot.session_retry":
     "🔁 {message}\n\nПровайдер возвращает одну и ту же ошибку при повторных запросах. Используйте /abort для остановки.",
+  "bot.external_user_input": "Внешний ввод пользователя",
   "bot.unknown_command": "⚠️ Неизвестная команда: {command}. Используйте /help для списка команд.",
   "bot.photo_downloading": "⏳ Скачиваю фото...",
   "bot.photo_too_large": "⚠️ Фото слишком большое (макс. {maxSizeMb}МБ)",

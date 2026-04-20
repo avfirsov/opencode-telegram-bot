@@ -63,6 +63,7 @@ export const zh: I18nDictionary = {
   "bot.prompt_send_error": "向 OpenCode 发送请求失败。",
   "bot.session_error": "🔴 OpenCode 返回错误：{message}",
   "bot.session_retry": "🔁 {message}\n\n提供方在重复重试时持续返回同一错误。使用 /abort 可停止。",
+  "bot.external_user_input": "外部用户输入",
   "bot.unknown_command": "⚠️ 未知命令：{command}。使用 /help 查看可用命令。",
   "bot.photo_downloading": "⏳ 正在下载照片...",
   "bot.photo_too_large": "⚠️ 照片过大（最大 {maxSizeMb}MB）",
